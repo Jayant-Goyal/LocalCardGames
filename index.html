@@ -243,14 +243,20 @@
         let selectedGameType = null;
         let currentGameDefinition = null;
 
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
-        };
+
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDFDX3hqdmKu1u30tjeeh7yA_t5pUgoHyU",
+  authDomain: "multiplayer-card-game-a206e.firebaseapp.com",
+  projectId: "multiplayer-card-game-a206e",
+  storageBucket: "multiplayer-card-game-a206e.firebasestorage.app",
+  messagingSenderId: "1086407759562",
+  appId: "1:1086407759562:web:cf565f578fc7b6c975c633"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
         const appId = 'default-card-games'; // Changed for the new structure
         
         // --- DOM ELEMENTS ---
