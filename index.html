@@ -165,7 +165,23 @@
         let handUnsubscribe = null;
 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "DEMO", authDomain: "DEMO", projectId: "DEMO" };
+        // Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDFDX3hqdmKu1u30tjeeh7yA_t5pUgoHyU",
+  authDomain: "multiplayer-card-game-a206e.firebaseapp.com",
+  projectId: "multiplayer-card-game-a206e",
+  storageBucket: "multiplayer-card-game-a206e.firebasestorage.app",
+  messagingSenderId: "1086407759562",
+  appId: "1:1086407759562:web:cf565f578fc7b6c975c633"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
         
         // --- DOM ELEMENTS ---
         const lobbyDiv = document.getElementById('lobby');
