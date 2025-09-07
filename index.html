@@ -62,7 +62,7 @@
             <h1 class="text-5xl font-bold mb-4">Pixel Card Games</h1>
             <p class="text-gray-400 mb-8">Choose a game to play</p>
             <div id="game-list" class="space-y-4">
-                <!-- Game buttons will be inserted here by JS -->
+                <p class="text-gray-400">Loading games...</p>
             </div>
         </div>
 
@@ -136,113 +136,15 @@
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, collection, writeBatch, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
         // =================================================================================
-        // GAME DEFINITIONS (This is where you can add new games)
+        // GAME DEFINITIONS will be loaded from the /games/ directory
         // =================================================================================
-        const GAME_DEFINITIONS = {
-            'pixel-cards': {
-                name: 'Pixel Cards',
-                description: 'Match colors and numbers to empty your hand.',
-                minPlayers: 2,
-                maxPlayers: 4,
-                initialHandSize: 7,
-                deck: function() {
-                    const deck = [];
-                    const COLORS = ['red', 'green', 'blue', 'yellow'];
-                    const VALUES = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'skip', 'reverse', 'draw2'];
-                    for (const color of COLORS) {
-                        for (const value of VALUES) {
-                            deck.push({ color, value });
-                            if (value !== '0') deck.push({ color, value });
-                        }
-                    }
-                    for (let i = 0; i < 4; i++) {
-                        deck.push({ color: 'wild', value: 'wild' });
-                        deck.push({ color: 'wild', value: 'wild4' });
-                    }
-                    return deck;
-                },
-                getDisplayInfo: function(card) {
-                    const colorMap = { red: 'bg-red-500', green: 'bg-green-500', blue: 'bg-blue-500', yellow: 'bg-yellow-500', wild: 'bg-gray-700'};
-                    const symbolMap = { skip: '🚫', reverse: '🔄', draw2: '+2', wild: '🎨', wild4: '+4' };
-                    return {
-                        backgroundColor: colorMap[card.color] || 'bg-gray-600',
-                        content: `<span class="${card.value.length > 2 ? 'text-xl' : ''}">${symbolMap[card.value] || card.value}</span>`,
-                        textColor: 'text-white'
-                    };
-                },
-                rules: {
-                    isPlayable: function(card, topCard, activeValue) { // activeValue is the current color
-                        return card.color === 'wild' || card.color === activeValue || card.value === topCard.value;
-                    },
-                    getWildCardChoices: function() {
-                        return { title: "Choose a color", choices: [
-                            { value: 'red', display: '<div class="w-full h-full bg-red-500 rounded-full"></div>' },
-                            { value: 'green', display: '<div class="w-full h-full bg-green-500 rounded-full"></div>' },
-                            { value: 'blue', display: '<div class="w-full h-full bg-blue-500 rounded-full"></div>' },
-                            { value: 'yellow', display: '<div class="w-full h-full bg-yellow-500 rounded-full"></div>' }
-                        ]};
-                    },
-                    onPlay: async function(transaction, gameState, card, chosenValue, player, playerHandRef, gameRef) {
-                        // This function defines the logic for card effects
-                        let nextPlayerIndex = gameState.players.findIndex(p => p.uid === player.uid);
-                        
-                        // Handle card effects that modify turn order or other players' hands
-                        // This logic is complex and needs access to the transaction
-                        // For simplicity, we are keeping the logic here. A more advanced system
-                        // might use a DSL (Domain Specific Language) in JSON.
-                    }
-                }
-            },
-            'crazy-eights': {
-                name: 'Crazy Eights',
-                description: 'Match suit or rank. Eights are wild!',
-                minPlayers: 2,
-                maxPlayers: 5,
-                initialHandSize: 5,
-                deck: function() {
-                    const deck = [];
-                    const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'];
-                    const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-                    for (const suit of SUITS) {
-                        for (const rank of RANKS) {
-                            deck.push({ suit, rank });
-                        }
-                    }
-                    return deck;
-                },
-                getDisplayInfo: function(card) {
-                    const suitSymbols = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
-                    const textColor = (card.suit === 'hearts' || card.suit === 'diamonds') ? 'text-red-500' : 'text-black';
-                    return {
-                        backgroundColor: 'bg-white',
-                        content: `<div>${card.rank}<div class="${textColor}">${suitSymbols[card.suit]}</div></div>`,
-                        textColor: textColor
-                    };
-                },
-                rules: {
-                    isPlayable: function(card, topCard, activeValue) { // activeValue is the current suit
-                        return card.rank === '8' || card.suit === activeValue || card.rank === topCard.rank;
-                    },
-                    getWildCardChoices: function() {
-                        return { title: "Choose a suit", choices: [
-                            { value: 'hearts', display: '♥', textColor: 'text-red-500' },
-                            { value: 'diamonds', display: '♦', textColor: 'text-red-500' },
-                            { value: 'clubs', display: '♣', textColor: 'text-black' },
-                            { value: 'spades', display: '♠', textColor: 'text-black' }
-                        ]};
-                    },
-                    onPlay: async function(transaction, gameState, card, chosenValue, player, playerHandRef, gameRef) {
-                        // Crazy Eights has simpler on-play logic in this version
-                    }
-                }
-            }
-        };
+        const GAME_FILES = ['pixel-cards.js', 'crazy-eights.js']; // List of game files to load
+        const GAME_DEFINITIONS = {}; // This will be populated dynamically
 
         // --- GLOBAL STATE & CONFIG ---
         let db, auth, userId, currentGameId = null, gameUnsubscribe = null, handUnsubscribe = null;
         let selectedGameType = null;
         let currentGameDefinition = null;
-
 
 
 // Your web app's Firebase configuration
@@ -311,7 +213,22 @@ const app = initializeApp(firebaseConfig);
             }
         }
 
-        function setupGameSelection() {
+        async function setupGameSelection() {
+            try {
+                // Dynamically import game definitions from the /games/ folder
+                for (const fileName of GAME_FILES) {
+                    const gameId = fileName.replace('.js', '');
+                    // Note: For this to work on a live server, the path might need adjustment.
+                    // On GitHub pages, this relative path should work if the folder structure is correct.
+                    const module = await import(`./games/${fileName}`);
+                    GAME_DEFINITIONS[gameId] = module.default;
+                }
+            } catch (error) {
+                console.error("Could not load game definition files.", error);
+                gameListDiv.innerHTML = `<p class="text-red-400">Error: Could not load games. Make sure the 'games' folder and its files exist at the root of your repository.</p>`;
+                return;
+            }
+
             gameListDiv.innerHTML = '';
             for (const gameId in GAME_DEFINITIONS) {
                 const game = GAME_DEFINITIONS[gameId];
@@ -329,7 +246,6 @@ const app = initializeApp(firebaseConfig);
         
         // --- FIREBASE & AUTH ---
         async function initializeFirebase() {
-            // ... (rest of the logic is refactored below)
             try {
                 if (firebaseConfig.apiKey === "YOUR_API_KEY") {
                     errorMessage.textContent = "Please add your Firebase configuration to the html file.";
@@ -370,7 +286,6 @@ const app = initializeApp(firebaseConfig);
         }
 
         function updateGameBoard(gameState, playerHand) {
-            // This function now uses currentGameDefinition for rules and rendering
             if (!gameState || !playerHand || !currentGameDefinition) return;
 
             // Render opponents
@@ -433,7 +348,6 @@ const app = initializeApp(firebaseConfig);
                 const deck = shuffleDeck(currentGameDefinition.deck());
                 const startingHand = deck.splice(0, currentGameDefinition.initialHandSize);
                 let firstCard = deck.pop();
-                // Rule for Pixel Cards to avoid starting with wild draw 4
                 if(selectedGameType === 'pixel-cards' && firstCard.value === 'wild4') {
                      deck.push(firstCard);
                      shuffleDeck(deck);
@@ -449,7 +363,7 @@ const app = initializeApp(firebaseConfig);
                     deck: deck,
                     discardPile: [firstCard],
                     currentPlayerUid: userId,
-                    activeValue: firstCard.color || firstCard.suit, // Generic active value (color or suit)
+                    activeValue: firstCard.color || firstCard.suit,
                     turnDirection: 1,
                     status: 'waiting',
                     createdAt: serverTimestamp(),
@@ -486,16 +400,13 @@ const app = initializeApp(firebaseConfig);
                 if(serverGameType !== selectedGameType) {
                     throw new Error(`This is a ${GAME_DEFINITIONS[serverGameType].name} game. Go back and select the correct game type to join.`);
                 }
-                 // ... transaction logic to join ...
                 await runTransaction(db, async transaction => {
                     const freshGameDoc = await transaction.get(gameRef);
                     const gameState = freshGameDoc.data();
-                    // ... (checks for full game, started game, etc.)
                      const hand = gameState.deck.splice(0, GAME_DEFINITIONS[gameState.gameType].initialHandSize);
                      const newPlayer = { uid: userId, name: `Player ${Math.floor(Math.random() * 1000)}`, cardCount: hand.length};
                      const updatedPlayers = [...gameState.players, newPlayer];
                      const newStatus = updatedPlayers.length >= GAME_DEFINITIONS[gameState.gameType].minPlayers ? 'active' : 'waiting';
-                     // ... update game state and player hand
                      transaction.update(gameRef, { players: updatedPlayers, deck: gameState.deck, status: newStatus, log: [...gameState.log, `${newPlayer.name} joined!`] });
                      transaction.set(doc(db, `artifacts/${appId}/users/${userId}/games/${gameId}`), {hand});
                 });
@@ -512,7 +423,6 @@ const app = initializeApp(firebaseConfig);
         }
 
         async function handlePlayCard(card) {
-            // Simplified for brevity, wild card logic would go here.
              const choices = currentGameDefinition.rules.getWildCardChoices();
              if ((card.color === 'wild' || card.rank === '8') && choices) {
                  choiceTitle.textContent = choices.title;
@@ -535,16 +445,11 @@ const app = initializeApp(firebaseConfig);
         }
 
         async function processCardPlay(card, chosenValue) {
-            // This is a highly complex transactional function.
-            // It would call currentGameDefinition.rules.onPlay to apply effects.
-            // Simplified for this example.
             console.log("Playing card:", card, "with chosen value:", chosenValue);
              const gameRef = doc(db, `artifacts/${appId}/public/data/games/${currentGameId}`);
              const playerHandRef = doc(db, `artifacts/${appId}/users/${userId}/games/${currentGameId}`);
             try {
                 await runTransaction(db, async transaction => {
-                    // ... get docs, check validity ...
-                    // This logic is now generic
                     const gameDoc = await transaction.get(gameRef);
                     const handDoc = await transaction.get(playerHandRef);
                     if (!gameDoc.exists() || !handDoc.exists()) throw new Error("Game state missing");
@@ -553,17 +458,15 @@ const app = initializeApp(firebaseConfig);
                     let playerHand = handDoc.data().hand;
                     const cardIndex = playerHand.findIndex(c => JSON.stringify(c) === JSON.stringify(card));
                     
-                    // ... play card, check for winner, apply effects via rules.onPlay ...
+                    if(cardIndex === -1) return; // Card already played by a quick double-click
                     playerHand.splice(cardIndex, 1);
 
-                    // A simplified turn advance
                     let nextPlayerIndex = (gameState.players.findIndex(p => p.uid === userId) + gameState.turnDirection + gameState.players.length) % gameState.players.length;
                     
                     transaction.update(gameRef, {
                         discardPile: [...gameState.discardPile, card],
                         activeValue: chosenValue,
                         currentPlayerUid: gameState.players[nextPlayerIndex].uid
-                        // ... other state changes from card effects
                     });
                     transaction.set(playerHandRef, { hand: playerHand });
                 });
@@ -606,19 +509,20 @@ const app = initializeApp(firebaseConfig);
         }
         
         // --- INITIAL SETUP ---
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             initializeFirebase();
-            setupGameSelection();
+            await setupGameSelection();
             showScreen(gameSelectionDiv);
 
             backToSelectionBtn.addEventListener('click', () => showScreen(gameSelectionDiv));
             createGameBtn.addEventListener('click', handleCreateGame);
             joinGameBtn.addEventListener('click', handleJoinGame);
             leaveGameBtn.addEventListener('click', handleLeaveGame);
+            drawDeckDiv.addEventListener('click', () => { /* Logic to draw a card would go here */});
             playAgainBtn.addEventListener('click', () => {
                 gameOverModal.classList.add('hidden');
                 handleLeaveGame();
-                showScreen(gameSelectionDiv); // Go all the way back
+                showScreen(gameSelectionDiv);
             });
         });
     </script>
