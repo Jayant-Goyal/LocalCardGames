@@ -75,7 +75,7 @@
         <!-- Lobby Screen -->
         <div id="lobby" class="flex flex-col items-center justify-center text-center h-full">
             <h1 class="text-5xl font-bold mb-4">Pixel Cards</h1>
-            <p class="text-gray-400 mb-8">Play with friends on the same WiFi!</p>
+            <p class="text-gray-400 mb-8">Play with friends from anywhere!</p>
             <div id="auth-loading" class="text-lg">Connecting...</div>
             <div id="lobby-actions" class="hidden">
                 <button id="create-game-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-xl mb-4 w-64">
@@ -154,7 +154,7 @@
     <script type="module">
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, collection, writeBatch, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- GLOBAL STATE & CONFIG ---
@@ -164,9 +164,6 @@
         let gameUnsubscribe = null;
         let handUnsubscribe = null;
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -182,6 +179,9 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+        
+        // This is used for structuring data in Firestore. You can leave it as is.
+        const appId = 'default-uno-game';
         
         // --- DOM ELEMENTS ---
         const lobbyDiv = document.getElementById('lobby');
@@ -231,6 +231,14 @@ const app = initializeApp(firebaseConfig);
         // --- FIREBASE INITIALIZATION & AUTH ---
         async function initializeFirebase() {
             try {
+                // Simple check to see if the user has added their config
+                if (firebaseConfig.apiKey === "YOUR_API_KEY") {
+                    errorMessage.textContent = "Please add your Firebase configuration to the uno_online.html file.";
+                    document.getElementById('lobby-actions').classList.add('hidden');
+                    document.getElementById('auth-loading').classList.add('hidden');
+                    return;
+                }
+
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
@@ -241,17 +249,13 @@ const app = initializeApp(firebaseConfig);
                         document.getElementById('auth-loading').classList.add('hidden');
                         document.getElementById('lobby-actions').classList.remove('hidden');
                     } else {
-                        // Automatically sign in if not authenticated
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            await signInWithCustomToken(auth, __initial_auth_token);
-                        } else {
-                            await signInAnonymously(auth);
-                        }
+                        // On a public site like GitHub Pages, we'll sign users in anonymously.
+                        await signInAnonymously(auth);
                     }
                 });
             } catch (error) {
                 console.error("Firebase Init Error:", error);
-                errorMessage.textContent = "Could not connect to the game server.";
+                errorMessage.textContent = "Could not connect to the game server. Check your Firebase config.";
             }
         }
 
@@ -349,7 +353,7 @@ const app = initializeApp(firebaseConfig);
                 gameInfo.textContent = "It's your turn!";
                 gameInfo.classList.add('text-yellow-300', 'animate-pulse');
             } else {
-                gameInfo.textContent = `${currentPlayer.name || 'Player'}'s turn`;
+                gameInfo.textContent = `${currentPlayer?.name || 'Player'}'s turn`;
                 gameInfo.classList.remove('text-yellow-300', 'animate-pulse');
             }
             
@@ -503,9 +507,6 @@ const app = initializeApp(firebaseConfig);
         
         async function handlePlayCard(card) {
              if (!currentGameId) return;
-
-             const gameRef = doc(db, `artifacts/${appId}/public/data/unoGames/${currentGameId}`);
-             const playerHandRef = doc(db, `artifacts/${appId}/users/${userId}/unoGames/${currentGameId}`);
 
              try {
                 if (card.color === 'wild') {
@@ -701,7 +702,6 @@ const app = initializeApp(firebaseConfig);
             if(handUnsubscribe) handUnsubscribe();
             currentGameId = null;
             switchToLobbyView();
-            // In a real app, you would also remove the player from the game state in Firestore.
         }
 
         // --- VIEW MANAGEMENT & LISTENERS ---
@@ -775,3 +775,4 @@ const app = initializeApp(firebaseConfig);
     </script>
 </body>
 </html>
+
