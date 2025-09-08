@@ -2,119 +2,171 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multiplayer Card Games</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>UNO Online</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-color: #1a202c;
+            --bg-light: #2d3748;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --secondary: #14b8a6;
+            --secondary-hover: #0f766e;
+        }
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Poppins', sans-serif;
             touch-action: manipulation;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at top right, rgba(79, 70, 229, 0.3), transparent 40%),
+                              radial-gradient(circle at bottom left, rgba(20, 184, 166, 0.3), transparent 40%);
+            overflow: hidden;
         }
         .card-base {
-            width: 80px;
-            height: 120px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 90px;
+            height: 140px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
             position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-            font-weight: bold;
             cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            border: 2px solid white;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            -webkit-tap-highlight-color: transparent; /* Disable tap highlight on mobile */
         }
-        .card-base:hover {
-            transform: translateY(-5px) scale(1.05);
-            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+        .card-base.playable:hover {
+            transform: translateY(-15px) scale(1.08);
+            box-shadow: 0 10px 25px rgba(251, 191, 36, 0.4);
         }
         .player-hand .card-base {
-            margin: 0 -20px;
+            margin: 0 -35px;
+        }
+        .player-hand .card-base:hover {
+           z-index: 10;
         }
         .opponent-card {
-            width: 40px;
-            height: 60px;
-            background-color: #4A5568;
-            border: 2px solid white;
-            border-radius: 4px;
+            width: 50px;
+            height: 75px;
+            background-color: var(--bg-light);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         .choice-picker-button {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
-            border: 3px solid white;
+            border: 4px solid white;
             transition: transform 0.2s;
-            font-size: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
         .choice-picker-button:hover {
-            transform: scale(1.1);
+            transform: scale(1.15);
         }
-        #draw-deck.playable {
-            border: 4px solid #FBBF24; /* Amber-400 */
-            animation: pulse-border 1.5s infinite;
+        .main-button {
+            transition: all 0.2s ease;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
         }
-        @keyframes pulse-border {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7); }
-            50% { box-shadow: 0 0 0 6px rgba(251, 191, 36, 0); }
+        .main-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 12px rgba(0,0,0,0.3);
+        }
+        .glass-panel {
+            background: rgba(45, 55, 72, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+        }
+        
+        /* Landscape Mode Adjustments */
+        @media (orientation: landscape) and (max-height: 500px) {
+            .card-base {
+                width: 60px;
+                height: 90px;
+                border-radius: 8px;
+            }
+            .player-hand .card-base {
+                margin: 0 -25px;
+            }
+             .opponent-card {
+                width: 35px;
+                height: 55px;
+                border-radius: 6px;
+            }
+            .h-full-screen {
+                height: 100vh;
+            }
+            #game-board {
+                grid-template-rows: auto 1fr auto;
+            }
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen">
+<body class="text-white flex items-center justify-center min-h-screen">
 
-    <div id="app-container" class="w-full h-full max-w-2xl mx-auto p-4 flex flex-col">
+    <div id="app-container" class="w-screen h-screen p-2 sm:p-4 flex flex-col">
 
         <!-- Game Selection Screen -->
         <div id="game-selection" class="flex flex-col items-center justify-center text-center h-full">
-            <h1 class="text-5xl font-bold mb-4">Pixel Card Games</h1>
-            <p class="text-gray-400 mb-8">Choose a game to play</p>
+            <h1 class="text-5xl md:text-6xl font-bold mb-4">UNO Online</h1>
+            <p class="text-gray-400 mb-8 text-lg">The classic card game, reimagined.</p>
             <div id="game-list" class="space-y-4">
-                <p class="text-gray-400">Loading games...</p>
+                <p class="text-gray-400">Loading...</p>
             </div>
         </div>
 
         <!-- Lobby Screen -->
         <div id="lobby" class="hidden flex-col items-center justify-center text-center h-full">
-            <button id="back-to-selection" class="absolute top-4 left-4 text-gray-400 hover:text-white">&larr; Back</button>
-            <h1 id="lobby-title" class="text-5xl font-bold mb-4"></h1>
+            <button id="back-to-selection" class="absolute top-4 left-4 text-gray-400 hover:text-white transition">&larr; Back</button>
+            <h1 id="lobby-title" class="text-5xl md:text-6xl font-bold mb-4"></h1>
             <p class="text-gray-400 mb-8">Play with friends from anywhere!</p>
             <div id="auth-loading" class="text-lg">Connecting...</div>
-            <div id="lobby-actions" class="hidden">
-                <button id="create-game-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-xl mb-4 w-64">
+            <div id="lobby-actions" class="hidden glass-panel p-8 space-y-4">
+                <button id="create-game-btn" class="main-button bg-indigo-600 hover:bg-indigo-500 text-white w-64 text-xl">
                     Create Game
                 </button>
-                <div class="flex flex-col items-center">
-                    <input type="text" id="game-id-input" placeholder="Enter Game ID" class="bg-gray-700 border border-gray-600 rounded-lg text-center text-white py-3 px-4 mb-2 w-64 uppercase" maxlength="5">
-                    <button id="join-game-btn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-lg text-xl w-64">
+                <div class="flex items-center text-gray-400">
+                    <hr class="w-20 border-gray-600"><span class="px-2">OR</span><hr class="w-20 border-gray-600">
+                </div>
+                <div class="flex flex-col items-center space-y-2">
+                    <input type="text" id="game-id-input" placeholder="ENTER GAME ID" class="bg-gray-700 border-2 border-gray-600 rounded-lg text-center text-white py-3 px-4 w-64 uppercase tracking-widest font-bold focus:border-teal-500 focus:ring-0 outline-none transition">
+                    <button id="join-game-btn" class="main-button bg-teal-600 hover:bg-teal-500 text-white text-xl w-64">
                         Join Game
                     </button>
                 </div>
             </div>
-            <p id="error-message" class="text-red-400 mt-4"></p>
+            <p id="error-message" class="text-red-400 mt-6 h-6"></p>
         </div>
 
         <!-- Game Screen -->
         <div id="game-board" class="hidden flex-col h-full w-full">
-            <div id="opponents-area" class="flex justify-around items-center h-24"></div>
-            <div class="flex-grow flex items-center justify-center space-x-4 my-4">
-                <div id="draw-deck" class="card-base bg-gray-800 flex items-center justify-center">
-                    <div id="draw-deck-content" class="text-4xl font-bold text-indigo-400"></div>
+            <div id="opponents-area" class="flex justify-center items-center h-28 p-2"></div>
+            
+            <div class="flex-grow flex items-center justify-center space-x-4 md:space-x-8 my-2">
+                <div id="draw-deck" class="card-base bg-gray-900 flex flex-col items-center justify-center border-4 border-transparent transition-all">
+                     <span class="text-4xl font-bold text-indigo-400">UNO</span>
+                     <span id="draw-deck-count" class="absolute bottom-1 text-sm font-semibold bg-gray-900 bg-opacity-50 px-2 rounded-full"></span>
                 </div>
-                <div id="discard-pile" class="card-base"></div>
+                <div id="discard-pile" class="card-base bg-transparent border-none"></div>
             </div>
-            <div class="text-center mb-2">
-                <p id="game-info" class="text-lg font-medium text-gray-300"></p>
-                <div class="h-10">
-                    <p id="game-log" class="text-amber-300 font-semibold text-sm h-full overflow-y-auto"></p>
+
+            <div id="player-area" class="mt-auto">
+                <div class="text-center mb-2 h-16 flex flex-col justify-center items-center">
+                    <p id="game-info" class="text-xl font-semibold text-gray-300 transition-colors duration-300"></p>
+                    <p id="game-log" class="text-amber-300 font-medium text-sm h-6"></p>
                 </div>
-            </div>
-            <div class="h-40 flex items-center justify-center">
-                 <div id="player-hand" class="flex justify-center items-end"></div>
-            </div>
-            <div class="text-center mt-auto pt-2">
-                <p class="text-gray-500">Game ID: <span id="game-id-display" class="font-bold tracking-widest"></span></p>
-                 <button id="leave-game-btn" class="text-xs bg-red-800 hover:bg-red-700 px-3 py-1 rounded mt-1">Leave Game</button>
+                <div class="h-44 flex items-center justify-center">
+                     <div id="player-hand" class="flex justify-center items-end"></div>
+                </div>
+                 <div class="text-center p-2 flex justify-between items-center">
+                    <button id="leave-game-btn" class="text-xs bg-red-800 hover:bg-red-700 px-3 py-1 rounded-full main-button">Leave</button>
+                    <p class="text-gray-500 text-xs">Game ID: <span id="game-id-display" class="font-bold tracking-widest"></span></p>
+                </div>
             </div>
         </div>
 
@@ -122,17 +174,17 @@
         <div id="loading-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
             <div class="text-white text-2xl" id="loading-text"></div>
         </div>
-        <div id="choice-picker-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-            <div class="bg-gray-800 p-6 rounded-lg shadow-xl text-center">
-                <h3 id="choice-title" class="text-2xl font-bold mb-4"></h3>
+        <div id="choice-picker-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 backdrop-filter backdrop-blur-sm flex items-center justify-center z-50">
+            <div class="glass-panel p-8 rounded-2xl shadow-xl text-center">
+                <h3 id="choice-title" class="text-3xl font-bold mb-6"></h3>
                 <div id="choice-buttons" class="flex space-x-4"></div>
             </div>
         </div>
-        <div id="game-over-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
-            <div class="bg-gray-800 p-8 rounded-lg shadow-xl text-center">
-                <h3 class="text-4xl font-bold mb-4">Game Over!</h3>
-                <p id="winner-text" class="text-2xl mb-6"></p>
-                <button id="play-again-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-xl">Play Again</button>
+        <div id="game-over-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 backdrop-filter backdrop-blur-sm flex items-center justify-center z-50">
+            <div class="glass-panel p-10 rounded-2xl shadow-xl text-center">
+                <h3 class="text-5xl font-bold mb-4">Game Over!</h3>
+                <p id="winner-text" class="text-3xl mb-8"></p>
+                <button id="play-again-btn" class="main-button bg-indigo-600 hover:bg-indigo-500 text-white text-2xl px-8 py-4">Play Again</button>
             </div>
         </div>
     </div>
@@ -143,63 +195,32 @@
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, collection, writeBatch, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         
-        // =================================================================================
-        // GAME DEFINITIONS will be loaded from the /games/ directory
-        // =================================================================================
-        const GAME_FILES = ['PixelCards.js', 'CrazyEights.js', 'UNO.js']; // List of game files to load
-        const GAME_DEFINITIONS = {}; // This will be populated dynamically
+        // --- GAME DEFINITIONS ---
+        const GAME_FILES = ['UNO.js'];
+        const GAME_DEFINITIONS = {};
 
         // --- GLOBAL STATE & CONFIG ---
         let db, auth, userId, currentGameId = null, gameUnsubscribe = null, handUnsubscribe = null;
         let selectedGameType = null;
         let currentGameDefinition = null;
 
-        // Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyDFDX3hqdmKu1u30tjeeh7yA_t5pUgoHyU",
-  authDomain: "multiplayer-card-game-a206e.firebaseapp.com",
-  projectId: "multiplayer-card-game-a206e",
-  storageBucket: "multiplayer-card-game-a206e.firebasestorage.app",
-  messagingSenderId: "1086407759562",
-  appId: "1:1086407759562:web:cf565f578fc7b6c975c633"
-};
+        const firebaseConfig = {
+            apiKey: "AIzaSyDFDX3hqdmKu1u30tjeeh7yA_t5pUgoHyU",
+            authDomain: "multiplayer-card-game-a206e.firebaseapp.com",
+            projectId: "multiplayer-card-game-a206e",
+            storageBucket: "multiplayer-card-game-a206e.firebasestorage.app",
+            messagingSenderId: "1086407759562",
+            appId: "1:1086407759562:web:cf565f578fc7b6c975c633"
+        };
         const appId = 'default-card-games'; 
         
         // --- DOM ELEMENTS ---
-        const gameSelectionDiv = document.getElementById('game-selection');
-        const gameListDiv = document.getElementById('game-list');
-        const lobbyDiv = document.getElementById('lobby');
-        const lobbyTitle = document.getElementById('lobby-title');
-        const backToSelectionBtn = document.getElementById('back-to-selection');
-        const authLoading = document.getElementById('auth-loading');
-        const lobbyActions = document.getElementById('lobby-actions');
-        const createGameBtn = document.getElementById('create-game-btn');
-        const joinGameBtn = document.getElementById('join-game-btn');
-        const gameIdInput = document.getElementById('game-id-input');
-        const errorMessage = document.getElementById('error-message');
-        const gameBoardDiv = document.getElementById('game-board');
-        const playerHandDiv = document.getElementById('player-hand');
-        const discardPileDiv = document.getElementById('discard-pile');
-        const drawDeckDiv = document.getElementById('draw-deck');
-        const drawDeckContent = document.getElementById('draw-deck-content');
-        const opponentsArea = document.getElementById('opponents-area');
-        const gameIdDisplay = document.getElementById('game-id-display');
-        const gameInfo = document.getElementById('game-info');
-        const gameLog = document.getElementById('game-log');
-        const choicePickerModal = document.getElementById('choice-picker-modal');
-        const choiceTitle = document.getElementById('choice-title');
-        const choiceButtons = document.getElementById('choice-buttons');
-        const gameOverModal = document.getElementById('game-over-modal');
-        const winnerText = document.getElementById('winner-text');
-        const playAgainBtn = document.getElementById('play-again-btn');
-        const leaveGameBtn = document.getElementById('leave-game-btn');
-        const loadingModal = document.getElementById('loading-modal');
-        const loadingText = document.getElementById('loading-text');
+        const allDivs = Object.fromEntries(['game-selection', 'lobby', 'back-to-selection', 'lobby-title', 'auth-loading', 'lobby-actions', 'create-game-btn', 'join-game-btn', 'game-id-input', 'error-message', 'game-board', 'player-hand', 'discard-pile', 'draw-deck', 'draw-deck-count', 'opponents-area', 'game-id-display', 'game-info', 'game-log', 'choice-picker-modal', 'choice-title', 'choice-buttons', 'game-over-modal', 'winner-text', 'play-again-btn', 'leave-game-btn', 'loading-modal', 'loading-text', 'game-list'].map(id => [id.replace(/-(\w)/g, (m, g) => g.toUpperCase()), document.getElementById(id)]));
 
         // --- HELPERS ---
         const generateGameId = () => Math.random().toString(36).substring(2, 7).toUpperCase();
-        const showLoading = (text) => { loadingText.textContent = text; loadingModal.classList.remove('hidden'); };
-        const hideLoading = () => loadingModal.classList.add('hidden');
+        const showLoading = (text) => { allDivs.loadingText.textContent = text; allDivs.loadingModal.classList.remove('hidden'); };
+        const hideLoading = () => allDivs.loadingModal.classList.add('hidden');
         const shuffleDeck = (deck) => {
             for (let i = deck.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -210,65 +231,57 @@ const firebaseConfig = {
 
         // --- VIEW MANAGEMENT ---
         function showScreen(screen) {
-            [gameSelectionDiv, lobbyDiv, gameBoardDiv].forEach(div => div.classList.add('hidden'));
+            [allDivs.gameSelection, allDivs.lobby, allDivs.gameBoard].forEach(div => div.classList.add('hidden'));
             screen.classList.remove('hidden');
-            if (screen === lobbyDiv || screen === gameBoardDiv) {
-                 screen.classList.add('flex');
-            }
+            screen.classList.add('flex');
         }
 
         async function setupGameSelection() {
             try {
                 for (const fileName of GAME_FILES) {
                     const gameId = fileName.replace('.js', '');
-                    const module = await import(`./games/${fileName}`);
-                    GAME_DEFINITIONS[gameId] = module.default;
+                    const module = await import(`./${fileName}`);
+                    GAME_DEFINITIONS[gameId.toUpperCase()] = module.default;
                 }
             } catch (error) {
                 console.error("Could not load game definition files.", error);
-                gameListDiv.innerHTML = `<p class="text-red-400">Error: Could not load games. Make sure the 'games' folder and its files exist at the root of your repository.</p>`;
+                allDivs.gameList.innerHTML = `<p class="text-red-400">Error: Could not load game logic.</p>`;
                 return;
             }
 
-            gameListDiv.innerHTML = '';
+            allDivs.gameList.innerHTML = '';
             for (const gameId in GAME_DEFINITIONS) {
                 const game = GAME_DEFINITIONS[gameId];
                 const button = document.createElement('button');
-                button.className = 'bg-gray-700 hover:bg-gray-600 text-white font-bold py-4 px-6 rounded-lg text-left w-80';
+                button.className = 'main-button bg-gray-700 hover:bg-gray-600 text-white text-left w-80';
                 button.innerHTML = `<div class="text-xl">${game.name}</div><div class="text-sm text-gray-400">${game.description}</div>`;
                 button.onclick = () => {
                     selectedGameType = gameId;
-                    lobbyTitle.textContent = game.name;
-                    showScreen(lobbyDiv);
+                    allDivs.lobbyTitle.textContent = game.name;
+                    showScreen(allDivs.lobby);
                 };
-                gameListDiv.appendChild(button);
+                allDivs.gameList.appendChild(button);
             }
         }
         
         // --- FIREBASE & AUTH ---
         async function initializeFirebase() {
-            // ... (rest of the logic is refactored below)
             try {
-                if (firebaseConfig.apiKey === "YOUR_API_KEY") {
-                    errorMessage.textContent = "Please add your Firebase configuration to the html file.";
-                    [authLoading, lobbyActions].forEach(el => el.classList.add('hidden'));
-                    return;
-                }
                 const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
-                        authLoading.classList.add('hidden');
-                        lobbyActions.classList.remove('hidden');
+                        allDivs.authLoading.classList.add('hidden');
+                        allDivs.lobbyActions.classList.remove('hidden');
                     } else {
                         await signInAnonymously(auth);
                     }
                 });
             } catch (error) {
                 console.error("Firebase Init Error:", error);
-                errorMessage.textContent = "Could not connect. Check your Firebase config.";
+                allDivs.errorMessage.textContent = "Could not connect to servers.";
             }
         }
 
@@ -276,71 +289,68 @@ const firebaseConfig = {
         function renderCard(card, isPlayable = false) {
             const cardEl = document.createElement('div');
             const displayInfo = currentGameDefinition.getDisplayInfo(card);
-            cardEl.className = `card-base ${displayInfo.backgroundColor}`;
+            cardEl.className = `card-base ${displayInfo.backgroundColorClass}`;
             cardEl.innerHTML = displayInfo.content;
             
             if (isPlayable) {
-                 cardEl.classList.add('cursor-pointer', 'hover:border-yellow-300', 'border-4', 'border-transparent');
+                 cardEl.classList.add('playable', 'cursor-pointer', 'border-yellow-400');
             } else {
-                cardEl.classList.add('opacity-70', 'cursor-not-allowed');
+                cardEl.classList.add('opacity-80', 'cursor-not-allowed');
             }
             return cardEl;
         }
 
         function updateGameBoard(gameState, playerHand) {
             if (!gameState || !playerHand || !currentGameDefinition) return;
-             const isMyTurn = gameState.currentPlayerUid === userId;
+            const isMyTurn = gameState.currentPlayerUid === userId;
 
-            // Render opponents
-            opponentsArea.innerHTML = '';
+            allDivs.opponentsArea.innerHTML = '';
             gameState.players.forEach(p => {
                 if (p.uid === userId) return;
                 const opponentDiv = document.createElement('div');
-                opponentDiv.className = `flex flex-col items-center p-2 rounded-lg ${gameState.currentPlayerUid === p.uid ? 'bg-indigo-800' : ''}`;
-                opponentDiv.innerHTML = `<div class="text-sm font-semibold truncate max-w-[80px]">${p.name || 'Player'}</div><div class="flex mt-1">${Array(p.cardCount).fill('<div class="opponent-card ml-[-30px]"></div>').join('')}</div>`;
-                opponentsArea.appendChild(opponentDiv);
+                opponentDiv.className = `flex flex-col items-center p-2 rounded-lg transition-all duration-300 mx-2 ${gameState.currentPlayerUid === p.uid ? 'bg-indigo-800 scale-110' : ''}`;
+                opponentDiv.innerHTML = `<div class="text-sm font-semibold truncate max-w-[80px]">${p.name || 'Player'}</div><div class="flex mt-1">${Array(p.cardCount).fill('<div class="opponent-card ml-[-35px]"></div>').join('')}</div>`;
+                allDivs.opponentsArea.appendChild(opponentDiv);
             });
 
-            // Render discard pile
             const topCard = gameState.discardPile[gameState.discardPile.length - 1];
-            discardPileDiv.innerHTML = '';
-            const discardCardEl = renderCard(topCard);
-            discardCardEl.classList.remove('cursor-pointer');
-            discardPileDiv.appendChild(discardCardEl);
+            allDivs.discardPile.innerHTML = '';
+            if (topCard) {
+                const discardCardEl = renderCard(topCard);
+                discardCardEl.classList.remove('cursor-pointer');
+                allDivs.discardPile.appendChild(discardCardEl);
+            }
 
-            // Render player hand
-            playerHandDiv.innerHTML = '';
-            playerHand.forEach(card => {
+            allDivs.playerHand.innerHTML = '';
+            playerHand.sort((a,b) => a.color.localeCompare(b.color) || a.value.localeCompare(b.value)).forEach(card => {
                 const isPlayable = isMyTurn && currentGameDefinition.rules.isPlayable(card, topCard, gameState.activeValue);
                 const cardEl = renderCard(card, isPlayable);
                 if (isPlayable) {
                     cardEl.addEventListener('click', () => handlePlayCard(card));
                 }
-                playerHandDiv.appendChild(cardEl);
+                allDivs.playerHand.appendChild(cardEl);
             });
             
-            // Highlight draw deck if it's my turn
-            drawDeckDiv.classList.toggle('playable', isMyTurn);
+            allDivs.drawDeck.classList.toggle('playable', isMyTurn);
+            allDivs.drawDeckCount.textContent = gameState.deck?.length || 0;
 
-            // Update Game Info, Log, and Game Over state
             const currentPlayer = gameState.players.find(p => p.uid === gameState.currentPlayerUid);
-            gameInfo.textContent = isMyTurn ? "It's your turn!" : `${currentPlayer?.name || 'Player'}'s turn`;
-            gameInfo.classList.toggle('text-yellow-300', isMyTurn);
+            allDivs.gameInfo.textContent = isMyTurn ? "It's your turn!" : `${currentPlayer?.name || 'Player'}'s turn`;
+            allDivs.gameInfo.classList.toggle('text-yellow-300', isMyTurn);
 
-            if(gameState.log?.length) gameLog.textContent = gameState.log[gameState.log.length - 1];
+            if(gameState.log?.length) allDivs.gameLog.textContent = gameState.log[gameState.log.length - 1];
 
             if (gameState.status === 'finished') {
                 const winner = gameState.players.find(p => p.uid === gameState.winner);
-                winnerText.textContent = winner.uid === userId ? "You won!" : `${winner.name || 'Player'} won!`;
-                gameOverModal.classList.remove('hidden');
+                allDivs.winnerText.textContent = winner.uid === userId ? "You won!" : `${winner.name || 'Player'} won!`;
+                allDivs.gameOverModal.classList.remove('hidden');
             } else {
-                gameOverModal.classList.add('hidden');
+                allDivs.gameOverModal.classList.add('hidden');
             }
         }
         
-        // --- GAME ACTIONS ---
+        // --- GAME ACTIONS (LOGIC REMAINS LARGELY THE SAME) ---
         async function handleCreateGame() {
-            // ... (no changes from previous version)
             showLoading("Creating Game...");
             const newGameId = generateGameId();
             currentGameId = newGameId;
@@ -353,107 +363,86 @@ const firebaseConfig = {
                 const deck = shuffleDeck(currentGameDefinition.deck());
                 const startingHand = deck.splice(0, currentGameDefinition.initialHandSize);
                 let firstCard = deck.pop();
-                while(firstCard.color === 'wild') { // UNO rule: first card can't be a wild card
-                     deck.push(firstCard);
+                while(firstCard.color === 'wild') {
+                     deck.unshift(firstCard);
                      shuffleDeck(deck);
                      firstCard = deck.pop();
                 }
-
                 const hostPlayer = { uid: userId, name: `Player ${Math.floor(Math.random() * 1000)}`, cardCount: startingHand.length };
-                
-                const batch = writeBatch(db);
-                batch.set(gameRef, {
-                    gameType: selectedGameType,
-                    players: [hostPlayer],
-                    deck: deck,
-                    discardPile: [firstCard],
-                    currentPlayerUid: userId,
-                    activeValue: firstCard.color || firstCard.suit,
-                    turnDirection: 1,
-                    status: 'waiting',
-                    createdAt: serverTimestamp(),
-                    log: ["Game created! Waiting for players..."]
-                });
-                batch.set(playerHandRef, { hand: startingHand });
-                await batch.commit();
+                await writeBatch(db)
+                    .set(gameRef, {
+                        gameType: selectedGameType, players: [hostPlayer], deck, discardPile: [firstCard],
+                        currentPlayerUid: userId, activeValue: firstCard.color, turnDirection: 1,
+                        status: 'waiting', createdAt: serverTimestamp(), log: ["Game created! Waiting for players..."]
+                    })
+                    .set(playerHandRef, { hand: startingHand })
+                    .commit();
 
                 await attachGameListeners(newGameId);
-                showScreen(gameBoardDiv);
+                showScreen(allDivs.gameBoard);
             } catch (error) {
                 console.error("Error creating game:", error);
-                errorMessage.textContent = "Failed to create game.";
+                allDivs.errorMessage.textContent = "Failed to create game.";
             } finally {
                 hideLoading();
             }
         }
 
         async function handleJoinGame() {
-            // ... (no changes from previous version)
-             const gameId = gameIdInput.value.toUpperCase();
+            const gameId = allDivs.gameIdInput.value.toUpperCase();
             if (!gameId) {
-                errorMessage.textContent = "Please enter a Game ID.";
+                allDivs.errorMessage.textContent = "Please enter a Game ID.";
                 return;
             }
             showLoading("Joining Game...");
-
             const gameRef = doc(db, `artifacts/${appId}/public/data/games/${gameId}`);
             try {
-                const gameDoc = await getDoc(gameRef);
-                if (!gameDoc.exists()) {
-                     throw new Error("Game not found!");
-                }
-                const serverGameType = gameDoc.data().gameType;
-                if(serverGameType !== selectedGameType) {
-                    throw new Error(`This is a ${GAME_DEFINITIONS[serverGameType].name} game. Go back and select the correct game type to join.`);
-                }
                 await runTransaction(db, async transaction => {
                     const freshGameDoc = await transaction.get(gameRef);
+                    if (!freshGameDoc.exists()) throw new Error("Game not found!");
                     const gameState = freshGameDoc.data();
-                     const hand = gameState.deck.splice(0, GAME_DEFINITIONS[gameState.gameType].initialHandSize);
-                     const newPlayer = { uid: userId, name: `Player ${Math.floor(Math.random() * 1000)}`, cardCount: hand.length};
-                     const updatedPlayers = [...gameState.players, newPlayer];
-                     const newStatus = updatedPlayers.length >= GAME_DEFINITIONS[gameState.gameType].minPlayers ? 'active' : 'waiting';
-                     transaction.update(gameRef, { players: updatedPlayers, deck: gameState.deck, status: newStatus, log: [...gameState.log, `${newPlayer.name} joined!`] });
-                     transaction.set(doc(db, `artifacts/${appId}/users/${userId}/games/${gameId}`), {hand});
+                    if (gameState.gameType !== selectedGameType) throw new Error(`This is a ${GAME_DEFINITIONS[gameState.gameType].name} game.`);
+                    const hand = gameState.deck.splice(0, GAME_DEFINITIONS[gameState.gameType].initialHandSize);
+                    const newPlayer = { uid: userId, name: `Player ${Math.floor(Math.random() * 1000)}`, cardCount: hand.length };
+                    const updatedPlayers = [...gameState.players, newPlayer];
+                    const newStatus = updatedPlayers.length >= GAME_DEFINITIONS[gameState.gameType].minPlayers ? 'active' : 'waiting';
+                    transaction.update(gameRef, { players: updatedPlayers, deck: gameState.deck, status: newStatus, log: [...gameState.log, `${newPlayer.name} joined!`] });
+                    transaction.set(doc(db, `artifacts/${appId}/users/${userId}/games/${gameId}`), { hand });
                 });
-                
                 currentGameId = gameId;
                 await attachGameListeners(gameId);
-                showScreen(gameBoardDiv);
+                showScreen(allDivs.gameBoard);
             } catch (error) {
                 console.error("Error joining game:", error);
-                errorMessage.textContent = error.message;
+                allDivs.errorMessage.textContent = error.message;
             } finally {
                 hideLoading();
             }
         }
 
-        async function handlePlayCard(card) {
-             const choices = currentGameDefinition.rules.getWildCardChoices();
-             if (card.color === 'wild' && choices) {
-                 choiceTitle.textContent = choices.title;
-                 choiceButtons.innerHTML = '';
-                 choices.choices.forEach(c => {
+        function handlePlayCard(card) {
+             if (card.color === 'wild') {
+                 allDivs.choiceTitle.textContent = "Choose a color";
+                 allDivs.choiceButtons.innerHTML = '';
+                 GAME_DEFINITIONS[selectedGameType].rules.getWildCardChoices().choices.forEach(c => {
                      const btn = document.createElement('button');
-                     btn.className = `choice-picker-button ${c.textColor || ''}`;
+                     btn.className = `choice-picker-button`;
                      btn.innerHTML = c.display;
                      btn.onclick = () => {
                         processCardPlay(card, c.value);
-                        choicePickerModal.classList.add('hidden');
+                        allDivs.choicePickerModal.classList.add('hidden');
                      }
-                     choiceButtons.appendChild(btn);
+                     allDivs.choiceButtons.appendChild(btn);
                  });
-                 choicePickerModal.classList.remove('hidden');
+                 allDivs.choicePickerModal.classList.remove('hidden');
                  return;
              }
-             const activeValue = card.color || card.suit;
-             processCardPlay(card, activeValue);
+             processCardPlay(card, card.color);
         }
 
         async function processCardPlay(card, chosenValue) {
             const gameRef = doc(db, `artifacts/${appId}/public/data/games/${currentGameId}`);
             const playerHandRef = doc(db, `artifacts/${appId}/users/${userId}/games/${currentGameId}`);
-            
             try {
                 await runTransaction(db, async transaction => {
                     const gameDoc = await transaction.get(gameRef);
@@ -462,63 +451,51 @@ const firebaseConfig = {
                     
                     let gameState = gameDoc.data();
                     let playerHand = handDoc.data().hand;
-                    const cardIndex = playerHand.findIndex(c => c.image === card.image && c.value === card.value);
-
-                    if (cardIndex === -1) return; // Card already played
+                    const cardIndex = playerHand.findIndex(c => c.id === card.id);
+                    if (cardIndex === -1) return;
                     
                     playerHand.splice(cardIndex, 1);
-                    
                     const currentPlayer = gameState.players.find(p => p.uid === userId);
                     const effects = currentGameDefinition.rules.onPlay(card, chosenValue, currentPlayer.name);
                     
+                    if (effects.drawCards > 0 && gameState.deck.length < effects.drawCards) {
+                        const topCard = gameState.discardPile.pop();
+                        gameState.deck.push(...shuffleDeck(gameState.discardPile));
+                        gameState.discardPile = [topCard];
+                        gameState.log.push("Deck reshuffled.");
+                    }
                     let turnDirection = effects.reverseTurn ? -gameState.turnDirection : gameState.turnDirection;
                     const currentPlayerIndex = gameState.players.findIndex(p => p.uid === userId);
                     let nextPlayerIndex = (currentPlayerIndex + turnDirection + gameState.players.length) % gameState.players.length;
-
                     if (effects.skipNextPlayer) {
                         nextPlayerIndex = (nextPlayerIndex + turnDirection + gameState.players.length) % gameState.players.length;
                     }
-                    
-                    const victimPlayer = gameState.players[nextPlayerIndex];
+                    const victimPlayer = gameState.players[(currentPlayerIndex + turnDirection + gameState.players.length) % gameState.players.length];
                     let victimHandUpdate = null;
-
-                    if (effects.drawCards > 0) {
+                    if (effects.drawCards > 0 && victimPlayer) {
                         const victimHandRef = doc(db, `artifacts/${appId}/users/${victimPlayer.uid}/games/${currentGameId}`);
                         const victimHandDoc = await transaction.get(victimHandRef);
-                        let victimHand = victimHandDoc.data().hand;
-                        const cardsToDraw = gameState.deck.splice(0, effects.drawCards);
-                        victimHand.push(...cardsToDraw);
-                        victimHandUpdate = { ref: victimHandRef, hand: victimHand };
+                        if (victimHandDoc.exists()) {
+                            let victimHand = victimHandDoc.data().hand;
+                            victimHand.push(...gameState.deck.splice(0, effects.drawCards));
+                            victimHandUpdate = { ref: victimHandRef, hand: victimHand };
+                        }
                     }
-                    
                     const updatedPlayers = gameState.players.map(p => {
                         if (p.uid === userId) return { ...p, cardCount: playerHand.length };
                         if (victimHandUpdate && p.uid === victimPlayer.uid) return { ...p, cardCount: victimHandUpdate.hand.length };
                         return p;
                     });
-                    
-                    let newStatus = gameState.status;
-                    let winner = null;
-                    if (playerHand.length === 0) {
-                        newStatus = 'finished';
-                        winner = userId;
-                    }
-                    
+                    const winner = playerHand.length === 0 ? userId : null;
                     transaction.update(gameRef, {
                         discardPile: [...gameState.discardPile, card],
-                        deck: gameState.deck,
-                        activeValue: effects.setNextColor || card.color || card.suit,
+                        deck: gameState.deck, activeValue: effects.setNextColor || card.color,
                         currentPlayerUid: gameState.players[nextPlayerIndex].uid,
-                        turnDirection: turnDirection,
-                        players: updatedPlayers,
-                        status: newStatus,
-                        winner: winner,
+                        turnDirection, players: updatedPlayers,
+                        status: winner ? 'finished' : gameState.status, winner,
                         log: [...gameState.log, effects.logMessage]
                     });
-                    
-                    if (victimHandUpdate) {
-                        transaction.set(victimHandUpdate.ref, { hand: victimHandUpdate.hand });
-                    }
+                    if (victimHandUpdate) transaction.set(victimHandUpdate.ref, { hand: victimHandUpdate.hand });
                     transaction.set(playerHandRef, { hand: playerHand });
                 });
             } catch (e) { console.error("Play card transaction failed", e); }
@@ -532,33 +509,29 @@ const firebaseConfig = {
                      const gameDoc = await transaction.get(gameRef);
                      const handDoc = await transaction.get(playerHandRef);
                      if (!gameDoc.exists() || !handDoc.exists()) throw new Error("Game state missing");
-
                      let gameState = gameDoc.data();
+                     if(gameState.currentPlayerUid !== userId) return;
+                     if (gameState.deck.length === 0) {
+                        if(gameState.discardPile.length <= 1) return; // Cannot reshuffle
+                        const topCard = gameState.discardPile.pop();
+                        gameState.deck = shuffleDeck(gameState.discardPile);
+                        gameState.discardPile = [topCard];
+                        gameState.log.push("Deck reshuffled.");
+                     }
                      let playerHand = handDoc.data().hand;
                      const currentPlayerIndex = gameState.players.findIndex(p => p.uid === userId);
-
-                     if(gameState.currentPlayerUid !== userId) return; // Not my turn
-                     if(gameState.deck.length === 0) return; // No cards to draw
-
-                     const drawnCard = gameState.deck.pop();
-                     playerHand.push(drawnCard);
-                     
+                     playerHand.push(gameState.deck.pop());
                      const updatedPlayers = gameState.players.map(p => p.uid === userId ? { ...p, cardCount: playerHand.length } : p);
                      const nextPlayerIndex = (currentPlayerIndex + gameState.turnDirection + gameState.players.length) % gameState.players.length;
-                     
                      const playerName = updatedPlayers.find(p => p.uid === userId).name;
-
                      transaction.update(gameRef, {
-                         deck: gameState.deck,
-                         players: updatedPlayers,
+                         deck: gameState.deck, players: updatedPlayers,
                          currentPlayerUid: gameState.players[nextPlayerIndex].uid,
                          log: [...gameState.log, `${playerName} drew a card.`]
                      });
                      transaction.set(playerHandRef, { hand: playerHand });
                  });
-             } catch (e) {
-                 console.error("Draw card transaction failed:", e);
-             }
+             } catch (e) { console.error("Draw card transaction failed:", e); }
         }
 
         function handleLeaveGame() {
@@ -566,32 +539,27 @@ const firebaseConfig = {
             if(handUnsubscribe) handUnsubscribe();
             currentGameId = null;
             currentGameDefinition = null;
-            showScreen(lobbyDiv);
+            showScreen(allDivs.lobby);
         }
 
         async function attachGameListeners(gameId) {
             if (gameUnsubscribe) gameUnsubscribe();
             if (handUnsubscribe) handUnsubscribe();
-
             const gameRef = doc(db, `artifacts/${appId}/public/data/games/${gameId}`);
             const playerHandRef = doc(db, `artifacts/${appId}/users/${userId}/games/${gameId}`);
-
             let localGameState = null;
             let localPlayerHand = [];
-
             gameUnsubscribe = onSnapshot(gameRef, (doc) => {
                 if (doc.exists()) {
                     localGameState = doc.data();
                     currentGameDefinition = GAME_DEFINITIONS[localGameState.gameType];
-                    gameIdDisplay.textContent = gameId;
-                    drawDeckContent.textContent = currentGameDefinition.name[0];
+                    allDivs.gameIdDisplay.textContent = gameId;
                     updateGameBoard(localGameState, localPlayerHand);
                 } else {
                     handleLeaveGame();
-                    errorMessage.textContent = "The game has ended or could not be found.";
+                    allDivs.errorMessage.textContent = "The game has ended or was not found.";
                 }
             });
-
             handUnsubscribe = onSnapshot(playerHandRef, (doc) => {
                 localPlayerHand = doc.data()?.hand || [];
                 if (localGameState) {
@@ -602,23 +570,22 @@ const firebaseConfig = {
         
         // --- INITIAL SETUP ---
         document.addEventListener('DOMContentLoaded', async () => {
-            initializeFirebase();
+            await initializeFirebase();
             await setupGameSelection();
-            showScreen(gameSelectionDiv);
-
-            backToSelectionBtn.addEventListener('click', () => showScreen(gameSelectionDiv));
-            createGameBtn.addEventListener('click', handleCreateGame);
-            joinGameBtn.addEventListener('click', handleJoinGame);
-            leaveGameBtn.addEventListener('click', handleLeaveGame);
-            drawDeckDiv.addEventListener('click', handleDrawCard);
-            playAgainBtn.addEventListener('click', () => {
-                gameOverModal.classList.add('hidden');
+            showScreen(allDivs.gameSelection);
+            
+            allDivs.backToSelection.addEventListener('click', () => showScreen(allDivs.gameSelection));
+            allDivs.createGameBtn.addEventListener('click', handleCreateGame);
+            allDivs.joinGameBtn.addEventListener('click', handleJoinGame);
+            allDivs.leaveGameBtn.addEventListener('click', handleLeaveGame);
+            allDivs.drawDeck.addEventListener('click', handleDrawCard);
+            allDivs.playAgainBtn.addEventListener('click', () => {
+                allDivs.gameOverModal.classList.add('hidden');
                 handleLeaveGame();
-                showScreen(gameSelectionDiv);
+                showScreen(allDivs.gameSelection);
             });
         });
     </script>
 </body>
 </html>
-
 

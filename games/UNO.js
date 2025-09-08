@@ -7,75 +7,85 @@ export default {
     deck: function() {
         const deck = [];
         const COLORS = ['red', 'green', 'blue', 'yellow'];
-
-        // Helper to generate a placeholder image path.
-        // Replace 'images/uno/' with the actual path to your card images.
-        // A unique identifier is added to the card object to help differentiate duplicate cards.
-        const getImagePath = (color, value) => `images/uno/${color}_${value.toLowerCase().replace(' ', '')}.png`;
         let cardIdCounter = 0;
 
+        const getCardIdentifier = (color, value) => `${color}-${value}-${cardIdCounter}`;
+
         for (const color of COLORS) {
-            deck.push({ id: cardIdCounter++, color, value: '0', image: getImagePath(color, '0') });
+            deck.push({ id: cardIdCounter++, color, value: '0', image: getCardIdentifier(color, '0') });
             for (let i = 1; i <= 9; i++) {
                 const valStr = i.toString();
-                deck.push({ id: cardIdCounter++, color, value: valStr, image: getImagePath(color, valStr) });
-                deck.push({ id: cardIdCounter++, color, value: valStr, image: getImagePath(color, valStr) });
+                deck.push({ id: cardIdCounter++, color, value: valStr, image: getCardIdentifier(color, valStr) });
+                deck.push({ id: cardIdCounter++, color, value: valStr, image: getCardIdentifier(color, valStr) });
             }
             ['skip', 'reverse', 'draw2'].forEach(action => {
-                deck.push({ id: cardIdCounter++, color, value: action, image: getImagePath(color, action) });
-                deck.push({ id: cardIdCounter++, color, value: action, image: getImagePath(color, action) });
+                deck.push({ id: cardIdCounter++, color, value: action, image: getCardIdentifier(color, action) });
+                deck.push({ id: cardIdCounter++, color, value: action, image: getCardIdentifier(color, action) });
             });
         }
 
         for (let i = 0; i < 4; i++) {
-            deck.push({ id: cardIdCounter++, color: 'wild', value: 'wild', image: getImagePath('wild', 'wild') });
-            deck.push({ id: cardIdCounter++, color: 'wild', value: 'wild4', image: getImagePath('wild', 'wild4') });
+            deck.push({ id: cardIdCounter++, color: 'wild', value: 'wild', image: getCardIdentifier('wild', 'wild') });
+            deck.push({ id: cardIdCounter++, color: 'wild', value: 'wild4', image: getCardIdentifier('wild', 'wild4') });
         }
 
         return deck;
     },
     getDisplayInfo: function(card) {
-        // This function generates the HTML for a card, using an image.
-        // It includes a fallback in case the image fails to load.
-        const colorMap = { red: '#EF4444', green: '#22C55E', blue: '#3B82F6', yellow: '#EAB308', wild: '#374151'};
+        const colorMap = { 
+            red: 'bg-red-500', 
+            green: 'bg-green-500', 
+            blue: 'bg-blue-500', 
+            yellow: 'bg-yellow-400', 
+            wild: 'bg-gray-800'
+        };
         const symbolMap = { skip: '🚫', reverse: '🔄', draw2: '+2', wild: '🎨', wild4: '+4' };
-        const fallbackColor = colorMap[card.color] || '#6B7280';
-        const fallbackSymbol = symbolMap[card.value] || card.value;
+        
+        const cardColorClass = colorMap[card.color] || 'bg-gray-500';
+        const cardSymbol = symbolMap[card.value] || card.value;
 
+        // A more modern card design with a main symbol and a corner symbol
         return {
-            backgroundColor: 'bg-gray-800', // Initial fallback color
-            content: `<img src="${card.image}" alt="${card.color} ${card.value}" class="w-full h-full object-contain rounded-lg" onerror="this.style.display='none'; this.parentElement.style.backgroundColor='${fallbackColor}'; this.parentElement.innerHTML='<span class=\\'text-white\\'>${fallbackSymbol}</span>';">`
+            backgroundColorClass: cardColorClass,
+            content: `
+                <div class="relative w-full h-full rounded-lg p-2 flex flex-col justify-between text-white">
+                    <div class="absolute inset-0 bg-black opacity-10 rounded-lg"></div>
+                    <div class="font-bold text-xl self-start">${cardSymbol}</div>
+                    <div class="font-bold text-5xl self-center">${cardSymbol}</div>
+                    <div class="font-bold text-xl self-end transform rotate-180">${cardSymbol}</div>
+                </div>
+            `
         };
     },
     rules: {
-        isPlayable: function(card, topCard, activeValue) { // activeValue is the current color
+        isPlayable: function(card, topCard, activeColor) {
+            if (!topCard) return true; // Can play any card if discard is empty (shouldn't happen)
             if (card.color === 'wild') return true;
-            if (card.color === activeValue) return true;
+            if (card.color === activeColor) return true;
             if (card.value === topCard.value) return true;
             return false;
         },
         getWildCardChoices: function() {
             return { title: "Choose a color", choices: [
-                { value: 'red', display: '<div class="w-full h-full bg-red-500 rounded-full"></div>' },
-                { value: 'green', display: '<div class="w-full h-full bg-green-500 rounded-full"></div>' },
-                { value: 'blue', display: '<div class="w-full h-full bg-blue-500 rounded-full"></div>' },
-                { value: 'yellow', display: '<div class="w-full h-full bg-yellow-500 rounded-full"></div>' }
+                { value: 'red', display: '<div class="w-full h-full bg-red-500 rounded-full shadow-lg"></div>' },
+                { value: 'green', display: '<div class="w-full h-full bg-green-500 rounded-full shadow-lg"></div>' },
+                { value: 'blue', display: '<div class="w-full h-full bg-blue-500 rounded-full shadow-lg"></div>' },
+                { value: 'yellow', display: '<div class="w-full h-full bg-yellow-400 rounded-full shadow-lg"></div>' }
             ]};
         },
         onPlay: function(card, chosenValue, playerName) {
-            // This function returns an "effects" object that the main game engine will execute.
             const effects = {
                 drawCards: 0,
                 skipNextPlayer: false,
                 reverseTurn: false,
                 setNextColor: null,
-                logMessage: `${playerName} played a ${card.color} ${card.value}.`
+                logMessage: `${playerName} played a ${card.color === 'wild' ? '' : card.color} ${card.value}.`
             };
 
             switch (card.value) {
                 case 'skip':
                     effects.skipNextPlayer = true;
-                    effects.logMessage = `${playerName} skipped the next player!`;
+                    effects.logMessage = ` ${playerName} skipped the next player!`;
                     break;
                 case 'reverse':
                     effects.reverseTurn = true;
@@ -83,12 +93,12 @@ export default {
                     break;
                 case 'draw2':
                     effects.drawCards = 2;
-                    effects.skipNextPlayer = true; // In UNO, after drawing, the next player is skipped.
-                    effects.logMessage = `${playerName} made the next player draw 2 cards!`;
+                    effects.skipNextPlayer = true;
+                    effects.logMessage = `${playerName} made the next player draw 2!`;
                     break;
                 case 'wild':
                     effects.setNextColor = chosenValue;
-                    effects.logMessage = `${playerName} played a wild card and chose ${chosenValue}.`;
+                    effects.logMessage = `${playerName} chose ${chosenValue}.`;
                     break;
                 case 'wild4':
                     effects.drawCards = 4;
