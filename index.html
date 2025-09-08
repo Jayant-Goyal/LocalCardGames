@@ -240,7 +240,8 @@
             try {
                 for (const fileName of GAME_FILES) {
                     const gameId = fileName.replace('.js', '');
-                    const module = await import(`./${fileName}`);
+                    // FIX: Added 'games/' to the import path
+                    const module = await import(`./games/${fileName}`);
                     GAME_DEFINITIONS[gameId.toUpperCase()] = module.default;
                 }
             } catch (error) {
