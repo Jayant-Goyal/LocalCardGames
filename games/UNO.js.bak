@@ -7,29 +7,32 @@ export default {
     deck: function() {
         const deck = [];
         const COLORS = ['red', 'green', 'blue', 'yellow'];
+        const WILD_VALUES = ['wild', 'wild4'];
 
         // Helper to generate a placeholder image path.
         // Replace 'images/uno/' with the actual path to your card images.
-        // A unique identifier is added to the card object to help differentiate duplicate cards.
         const getImagePath = (color, value) => `images/uno/${color}_${value.toLowerCase().replace(' ', '')}.png`;
-        let cardIdCounter = 0;
 
         for (const color of COLORS) {
-            deck.push({ id: cardIdCounter++, color, value: '0', image: getImagePath(color, '0') });
+            // One '0' card
+            deck.push({ color, value: '0', image: getImagePath(color, '0') });
+            // Two of each card from 1-9
             for (let i = 1; i <= 9; i++) {
                 const valStr = i.toString();
-                deck.push({ id: cardIdCounter++, color, value: valStr, image: getImagePath(color, valStr) });
-                deck.push({ id: cardIdCounter++, color, value: valStr, image: getImagePath(color, valStr) });
+                deck.push({ color, value: valStr, image: getImagePath(color, valStr) });
+                deck.push({ color, value: valStr, image: getImagePath(color, valStr) });
             }
+            // Two of each action card
             ['skip', 'reverse', 'draw2'].forEach(action => {
-                deck.push({ id: cardIdCounter++, color, value: action, image: getImagePath(color, action) });
-                deck.push({ id: cardIdCounter++, color, value: action, image: getImagePath(color, action) });
+                deck.push({ color, value: action, image: getImagePath(color, action) });
+                deck.push({ color, value: action, image: getImagePath(color, action) });
             });
         }
 
+        // Four of each wild card
         for (let i = 0; i < 4; i++) {
-            deck.push({ id: cardIdCounter++, color: 'wild', value: 'wild', image: getImagePath('wild', 'wild') });
-            deck.push({ id: cardIdCounter++, color: 'wild', value: 'wild4', image: getImagePath('wild', 'wild4') });
+            deck.push({ color: 'wild', value: 'wild', image: getImagePath('wild', 'wild') });
+            deck.push({ color: 'wild', value: 'wild4', image: getImagePath('wild', 'wild4') });
         }
 
         return deck;
@@ -62,43 +65,11 @@ export default {
                 { value: 'yellow', display: '<div class="w-full h-full bg-yellow-500 rounded-full"></div>' }
             ]};
         },
-        onPlay: function(card, chosenValue, playerName) {
-            // This function returns an "effects" object that the main game engine will execute.
-            const effects = {
-                drawCards: 0,
-                skipNextPlayer: false,
-                reverseTurn: false,
-                setNextColor: null,
-                logMessage: `${playerName} played a ${card.color} ${card.value}.`
-            };
-
-            switch (card.value) {
-                case 'skip':
-                    effects.skipNextPlayer = true;
-                    effects.logMessage = `${playerName} skipped the next player!`;
-                    break;
-                case 'reverse':
-                    effects.reverseTurn = true;
-                    effects.logMessage = `${playerName} reversed the turn order!`;
-                    break;
-                case 'draw2':
-                    effects.drawCards = 2;
-                    effects.skipNextPlayer = true; // In UNO, after drawing, the next player is skipped.
-                    effects.logMessage = `${playerName} made the next player draw 2 cards!`;
-                    break;
-                case 'wild':
-                    effects.setNextColor = chosenValue;
-                    effects.logMessage = `${playerName} played a wild card and chose ${chosenValue}.`;
-                    break;
-                case 'wild4':
-                    effects.drawCards = 4;
-                    effects.skipNextPlayer = true;
-                    effects.setNextColor = chosenValue;
-                    effects.logMessage = `${playerName} made the next player draw 4 and chose ${chosenValue}!`;
-                    break;
-            }
-            return effects;
+        onPlay: async function(transaction, gameState, card, chosenValue, player, playerHandRef, gameRef) {
+            // This function defines the special effects of cards (e.g., skip, draw two).
+            // NOTE: The main game logic needs to be updated to fully use this function for complex
+            // actions like making another player draw cards.
+            // For now, this is a conceptual placeholder for the game's logic.
         }
     }
 };
-
